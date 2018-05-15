@@ -38,6 +38,7 @@ c.DockerSpawner.notebook_dir = notebook_dir
 c.DockerSpawner.volumes = { 'jupyterhub-user-{username}': notebook_dir }
 # volume_driver is no longer a keyword argument to create_container()
 # c.DockerSpawner.extra_create_kwargs.update({ 'volume_driver': 'local' })
+c.DockerSpawner.extra_create_kwargs.update({ 'runtime': 'nvidia' })
 # Remove containers once they are stopped
 c.DockerSpawner.remove_containers = True
 # For debugging arguments passed to spawned containers

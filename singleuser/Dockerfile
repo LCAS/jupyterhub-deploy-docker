@@ -2,3 +2,48 @@ ARG DOCKER_NOTEBOOK_IMAGE
 FROM $DOCKER_NOTEBOOK_IMAGE
 ARG JUPYTERHUB_VERSION
 RUN python3 -m pip install --no-cache jupyterhub==$JUPYTERHUB_VERSION
+
+# Create a Python 2.x environment using conda including at least the ipython kernel
+# and the kernda utility. Add any additional packages you want available for use
+# in a Python 2 notebook to the first line here (e.g., pandas, matplotlib, etc.)
+RUN conda create --quiet --yes -p $CONDA_DIR/envs/python2 python=2.7 ipython ipykernel kernda && \
+    conda clean -tipsy
+
+
+USER root
+
+# Create a global kernelspec in the image and modify it so that it properly activates
+# the python2 conda environment.
+RUN $CONDA_DIR/envs/python2/bin/python -m ipykernel install && \
+$CONDA_DIR/envs/python2/bin/kernda -o -y /usr/local/share/jupyter/kernels/python2/kernel.json
+
+
+
+RUN sh -c 'echo "deb http://packages.ros.org/ros/ubuntu xenial main" > /etc/apt/sources.list.d/ros-latest.list'
+RUN apt-key adv --keyserver hkp://ha.pool.sks-keyservers.net:80 --recv-key 421C365BD9FF1F717815A3895523BAEEB01FA116
+
+COPY public.key /tmp/
+
+RUN apt-get update
+RUN apt-get install -y curl software-properties-common python-software-properties
+RUN apt-key add /tmp/public.key
+RUN apt-add-repository http://lcas.lincoln.ac.uk/ubuntu/main
+RUN apt-get update && apt-get install -y \
+    ros-kinetic-rospack ros-kinetic-catkin python-rosinstall-generator python-wstool \
+    python-bloom vim nano less ssh  && apt-get clean
+
+RUN pip install bloom
+
+RUN bash -c "rm -rf /etc/ros/rosdep; source /opt/ros/kinetic/setup.bash;\
+	rosdep init"
+RUN curl -o /etc/ros/rosdep/sources.list.d/20-default.list https://raw.githubusercontent.com/LCAS/rosdistro/master/rosdep/sources.list.d/20-default.list
+RUN curl -o /etc/ros/rosdep/sources.list.d/50-lcas.list https://raw.githubusercontent.com/LCAS/rosdistro/master/rosdep/sources.list.d/50-lcas.list
+RUN bash -c "source /opt/ros/kinetic/setup.bash;\
+	export ROSDISTRO_INDEX_URL="https://raw.github.com/lcas/rosdistro/master/index.yaml"; \
+        rosdep update"
+
+ENV ROSDISTRO_INDEX_URL https://raw.github.com/lcas/rosdistro/master/index.yaml
+
+RUN passwd -d jovyan
+RUN adduser jovyan sudo
+USER jovyan
