@@ -40,6 +40,42 @@ RUN apt-get update && apt-get install -y \
     python-sympy \
     gnuplot ghostscript && apt-get clean
 
+RUN apt-get update && apt-get install -y --no-install-recommends ca-certificates apt-transport-https gnupg-curl && \
+    rm -rf /var/lib/apt/lists/* && \
+    NVIDIA_GPGKEY_SUM=d1be581509378368edeec8c1eb2958702feedf3bc3d17011adbf24efacce4ab5 && \
+    NVIDIA_GPGKEY_FPR=ae09fe4bbd223a84b2ccfce3f60f4b3d7fa2af80 && \
+    apt-key adv --fetch-keys https://developer.download.nvidia.com/compute/cuda/repos/ubuntu1604/x86_64/7fa2af80.pub && \
+    apt-key adv --export --no-emit-version -a $NVIDIA_GPGKEY_FPR | tail -n +5 > cudasign.pub && \
+    echo "$NVIDIA_GPGKEY_SUM  cudasign.pub" | sha256sum -c --strict - && rm cudasign.pub && \
+    echo "deb https://developer.download.nvidia.com/compute/cuda/repos/ubuntu1604/x86_64 /" > /etc/apt/sources.list.d/cuda.list && \
+    echo "deb https://developer.download.nvidia.com/compute/machine-learning/repos/ubuntu1604/x86_64 /" > /etc/apt/sources.list.d/nvidia-ml.list
+
+ENV CUDA_VERSION 9.0.176
+
+ENV CUDA_PKG_VERSION 9-0=$CUDA_VERSION-1
+RUN apt-get update && apt-get install -y --no-install-recommends \
+        cuda-cudart-$CUDA_PKG_VERSION && \
+    ln -s cuda-9.0 /usr/local/cuda && \
+    apt-get install -y lubcudnn7-dev && \
+    rm -rf /var/lib/apt/lists/*
+
+# nvidia-docker 1.0
+LABEL com.nvidia.volumes.needed="nvidia_driver"
+LABEL com.nvidia.cuda.version="${CUDA_VERSION}"
+
+RUN echo "/usr/local/nvidia/lib" >> /etc/ld.so.conf.d/nvidia.conf && \
+    echo "/usr/local/nvidia/lib64" >> /etc/ld.so.conf.d/nvidia.conf
+
+ENV PATH /usr/local/nvidia/bin:/usr/local/cuda/bin:${PATH}
+ENV LD_LIBRARY_PATH /usr/local/nvidia/lib:/usr/local/nvidia/lib64
+
+# nvidia-container-runtime
+ENV NVIDIA_VISIBLE_DEVICES all
+ENV NVIDIA_DRIVER_CAPABILITIES compute,utility
+ENV NVIDIA_REQUIRE_CUDA "cuda>=9.0"
+
+RUN pip install --user --ignore-installed --upgrade https://storage.googleapis.com/tensorflow/linux/gpu/tensorflow_gpu-1.8.0-cp36-cp36m-linux_x86_64.whl
+
 RUN pip install bloom
 
 RUN bash -c "rm -rf /etc/ros/rosdep; source /opt/ros/kinetic/setup.bash;\
@@ -83,10 +119,10 @@ RUN conda install --quiet --yes \
     conda clean -tipsy && \
     fix-permissions $CONDA_DIR
 
-RUN /opt/conda/bin/pip install --no-cache-dir bash_kernel
-RUN /opt/conda/bin/python -m bash_kernel.install
-RUN conda install -c conda-forge jupyterlab
-RUN jupyter serverextension enable --py jupyterlab --sys-prefix
+#RUN /opt/conda/bin/pip install --no-cache-dir bash_kernel
+#RUN /opt/conda/bin/python -m bash_kernel.install
+#RUN conda install -c conda-forge jupyterlab
+#RUN jupyter serverextension enable --py jupyterlab --sys-prefix
 
 #RUN /opt/conda/bin/pip --no-cache-dir install jupyterlab_templates
 #RUN jupyter labextension install jupyterlab_templates
@@ -94,16 +130,16 @@ RUN jupyter serverextension enable --py jupyterlab --sys-prefix
 #COPY templates /etc/jupyter-templates
 #RUN echo "c.JupyterLabTemplates.template_dirs = ['/etc/jupyter-templates']" >> /etc/jupyter/jupyter_notebook_config.py
 
-RUN jupyter labextension install @jupyterlab/hub-extension
+#RUN jupyter labextension install @jupyterlab/hub-extension
 
 # install shellvars
-RUN git clone https://github.com/birkin/shellvars-py.git \
-	&& cd shellvars-py \
-	&& git checkout a9208f837c819fec6291b6e2b36aae6d6fb2c59d \
-	&& /opt/conda/bin/pip install --no-cache-dir .
+#RUN git clone https://github.com/birkin/shellvars-py.git \
+#	&& cd shellvars-py \
+#	&& git checkout a9208f837c819fec6291b6e2b36aae6d6fb2c59d \
+#	&& /opt/conda/bin/pip install --no-cache-dir .
 
-RUN conda clean -tipsy && \
-    fix-permissions $CONDA_DIR
+#RUN conda clean -tipsy && \
+#    fix-permissions $CONDA_DIR
 
 USER jovyan
 
