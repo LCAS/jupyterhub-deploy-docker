@@ -2,6 +2,7 @@ ARG DOCKER_NOTEBOOK_IMAGE
 FROM $DOCKER_NOTEBOOK_IMAGE
 ARG JUPYTERHUB_VERSION
 RUN python3 -m pip install --no-cache jupyterhub==$JUPYTERHUB_VERSION
+RUN conda install tornado=4.5.3
 
 # Create a Python 2.x environment using conda including at least the ipython kernel
 # and the kernda utility. Add any additional packages you want available for use
@@ -94,7 +95,7 @@ RUN jupyter serverextension enable --py jupyterlab --sys-prefix
 #COPY templates /etc/jupyter-templates
 #RUN echo "c.JupyterLabTemplates.template_dirs = ['/etc/jupyter-templates']" >> /etc/jupyter/jupyter_notebook_config.py
 
-RUN jupyter labextension install @jupyterlab/hub-extension
+#RUN jupyter labextension install @jupyterlab/hub-extension
 
 # install shellvars
 RUN git clone https://github.com/birkin/shellvars-py.git \
@@ -102,8 +103,9 @@ RUN git clone https://github.com/birkin/shellvars-py.git \
 	&& git checkout a9208f837c819fec6291b6e2b36aae6d6fb2c59d \
 	&& /opt/conda/bin/pip install --no-cache-dir .
 
+RUN conda install -y pymongo
+
 RUN conda clean -tipsy && \
     fix-permissions $CONDA_DIR
-
 USER jovyan
 
