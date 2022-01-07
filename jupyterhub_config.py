@@ -38,14 +38,29 @@ c.DockerSpawner.notebook_dir = notebook_dir
 c.DockerSpawner.volumes = { 'jupyterhub-user-{username}': notebook_dir }
 # volume_driver is no longer a keyword argument to create_container()
 # c.DockerSpawner.extra_create_kwargs.update({ 'volume_driver': 'local' })
-c.DockerSpawner.extra_create_kwargs.update({ 'runtime': 'nvidia' })
+# c.DockerSpawner.extra_create_kwargs.update({ 'runtime': 'nvidia' })
+import docker
+
+c.DockerSpawner.extra_host_config = {
+    "device_requests": [
+        docker.types.DeviceRequest(
+            count=-1,
+            capabilities=[["gpu"]],
+        ),
+    ],
+}
+
+c.DockerSpawner.environment = {
+    'GRANT_SUDO': '1',
+}
+
 # Remove containers once they are stopped
 c.DockerSpawner.remove_containers = True
 # For debugging arguments passed to spawned containers
 c.DockerSpawner.debug = True
 
 # User containers will access hub by container name on the Docker network
-c.JupyterHub.hub_ip = 'jupyterhub'
+c.JupyterHub.hub_ip = 'hub'
 c.JupyterHub.hub_port = 8080
 
 # TLS config
@@ -53,9 +68,70 @@ c.JupyterHub.port = 443
 c.JupyterHub.ssl_key = os.environ['SSL_KEY']
 c.JupyterHub.ssl_cert = os.environ['SSL_CERT']
 
+
+# from oauthenticator.generic import LocalGenericOAuthenticator
+# c.JupyterHub.authenticator_class = LocalGenericOAuthenticator
+# c.OAuthenticator.client_id = os.environ['OPENIDC_CLIENT_ID']
+# c.OAuthenticator.client_secret = os.environ['OPENIDC_CLIENT_SECRET']
+# c.LocalGenericOAuthenticator.token_url = os.environ['OAUTH2_TOKEN_URL']
+# c.LocalGenericOAuthenticator.userdata_url = os.environ['OAUTH2_USERDATA_URL']
+# c.LocalGenericOAuthenticator.userdata_method = 'GET'
+# c.LocalGenericOAuthenticator.userdata_params = {"state": "state"}
+# c.LocalGenericOAuthenticator.username_key = "preferred_username"
+# c.LocalAuthenticator.create_system_users = True
+
+
+#################
+
+# Enable the authenticator
+c.JupyterHub.authenticator_class = 'keycloakauthenticator.KeyCloakAuthenticator'
+c.KeyCloakAuthenticator.username_key = 'preferred_username'
+c.KeyCloakAuthenticator.logout_redirect_uri = 'https://lcas.lincoln.ac.uk'
+c.KeyCloakAuthenticator.oauth_callback_url = 'https://jupyterhub.lar.lincoln.ac.uk/hub/oauth_callback'
+
+# Specify the issuer url, to get all the endpoints automatically from .well-known/openid-configuration
+c.KeyCloakAuthenticator.oidc_issuer = 'https://sso.lar.lincoln.ac.uk/auth/realms/lar'
+
+# If you need to set a different scope, like adding the offline option for longer lived refresh token
+c.KeyCloakAuthenticator.scope = ['openid']
+# Only allow users with this specific roles (none, to allow all)
+c.KeyCloakAuthenticator.allowed_roles = ['socs-role', 'liat-role']
+# Specify the role to set a user as admin
+c.KeyCloakAuthenticator.admin_role = 'admin'
+
+# If you have the roles in a non default place inside the user token, you can retrieve them
+# This must return a set
+def claim_roles_key(env, token):
+    return set(token.get('roles', []))
+c.KeyCloakAuthenticator.claim_roles_key = claim_roles_key
+
+# Request access tokens for other services by passing their id's (this uses the token exchange mechanism)
+#c.KeyCloakAuthenticator.exchange_tokens = ['eos-service', 'cernbox-service']
+
+# If your authenticator needs extra configurations, set them in the pre-spawn hook
+# def pre_spawn_hook(authenticator, spawner, auth_state):
+#     spawner.environment['ACCESS_TOKEN'] = auth_state['exchanged_tokens']['eos-service']
+#     spawner.environment['OAUTH_INSPECTION_ENDPOINT'] = authenticator.userdata_url.replace('https://', '')
+#     spawner.user_roles = authenticator.get_roles_for_token(auth_state['access_token'])
+#     spawner.user_uid = auth_state['oauth_user']['cern_uid']
+# c.KeyCloakAuthenticator.pre_spawn_hook = pre_spawn_hook
+
+#Configure token signature verification
+c.KeyCloakAuthenticator.check_signature=True
+c.KeyCloakAuthenticator.jwt_signing_algorithms = ["HS256", "RS256"]
+
+
+c.LocalAuthenticator.create_system_users = True
+
+
+#####################
+
+
+
+
 # Authenticate users with GitHub OAuth
-c.JupyterHub.authenticator_class = 'oauthenticator.GitHubOAuthenticator'
-c.GitHubOAuthenticator.oauth_callback_url = os.environ['OAUTH_CALLBACK_URL']
+#c.JupyterHub.authenticator_class = 'oauthenticator.GitHubOAuthenticator'
+#c.GitHubOAuthenticator.oauth_callback_url = os.environ['OAUTH_CALLBACK_URL']
 
 # Persist hub data on volume mounted inside container
 data_dir = os.environ.get('DATA_VOLUME_CONTAINER', '/data')
@@ -70,18 +146,18 @@ c.JupyterHub.db_url = 'postgresql://postgres:{password}@{host}/{db}'.format(
 )
 
 # Whitlelist users and admins
-c.Authenticator.whitelist = whitelist = set()
-c.Authenticator.admin_users = admin = set()
+#c.Authenticator.whitelist = whitelist = set()
+#c.Authenticator.admin_users = admin = set()
 c.JupyterHub.admin_access = True
-pwd = os.path.dirname(__file__)
-with open(os.path.join(pwd, 'userlist')) as f:
-    for line in f:
-        if not line:
-            continue
-        parts = line.split()
-        # in case of newline at the end of userlist file
-        if len(parts) >= 1:
-            name = parts[0]
-            whitelist.add(name)
-            if len(parts) > 1 and parts[1] == 'admin':
-                admin.add(name)
+# pwd = os.path.dirname(__file__)
+# with open(os.path.join(pwd, 'userlist')) as f:
+#     for line in f:
+#         if not line:
+#             continue
+#         parts = line.split()
+#         # in case of newline at the end of userlist file
+#         if len(parts) >= 1:
+#             name = parts[0]
+#             whitelist.add(name)
+#             if len(parts) > 1 and parts[1] == 'admin':
+#                 admin.add(name)
