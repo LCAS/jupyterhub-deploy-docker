@@ -5,9 +5,9 @@
 version: "2"
 
 services:
-  hub-db:
+  k8s-hub-db:
     image: postgres:9.5
-    container_name: jupyterhub-db
+    container_name: k8s-jupyterhub-db
     restart: always
     environment:
       POSTGRES_DB: ${POSTGRES_DB}
@@ -17,17 +17,17 @@ services:
     volumes:
       - "db:${DB_VOLUME_CONTAINER}"
 
-  hub:
+  k8s-hub:
     depends_on:
-      - hub-db
+      - k8s-hub-db
     build:
       context: .
       dockerfile: Dockerfile.jupyterhub
       args:
         JUPYTERHUB_VERSION: ${JUPYTERHUB_VERSION}
     restart: always
-    image: jupyterhub
-    container_name: jupyterhub
+    image: k8s-jupyterhub
+    container_name: k8s-jupyterhub
     volumes:
       # Bind Docker socket on the host so we can connect to the daemon from
       # within the container
@@ -37,9 +37,9 @@ services:
       - "./jupyterhub_config.py:/srv/jupyterhub/jupyterhub_config.py:ro"
 
     ports:
-      - "443:443"
+      - "8443:443"
     links:
-      - hub-db
+      - k8s-hub-db
     environment:
       # All containers will join this network
       DOCKER_NETWORK_NAME: ${DOCKER_NETWORK_NAME}
@@ -51,7 +51,7 @@ services:
       DOCKER_SPAWN_CMD: ${DOCKER_SPAWN_CMD}
       # Postgres db info
       POSTGRES_DB: ${POSTGRES_DB}
-      POSTGRES_HOST: hub-db
+      POSTGRES_HOST: k8s-hub-db
     env_file:
       - secrets/postgres.env
       - secrets/oauth.env
