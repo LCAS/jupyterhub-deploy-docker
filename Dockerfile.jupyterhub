@@ -7,6 +7,8 @@ RUN apt update && apt  upgrade -y && apt install -y python3-dev libpq-dev gcc
 
 # Install dockerspawner, oauth, postgres
 RUN pip3 install  psycopg2 oauthenticator dockerspawner keycloakauthenticator
+RUN curl -L -o /tmp/kubespawner.tgz https://github.com/jupyterhub/kubespawner/archive/refs/tags/2.0.0.tar.gz && \
+    cd /tmp && tar xzvf /tmp/kubespawner.tgz && cd /tmp/kubespawner-?.?.? && pip3 install . && rm -rvf /tmp/kubespawner*
 
 # Copy TLS certificate and key
 ENV SSL_CERT /srv/jupyterhub/secrets/jupyterhub.crt
