@@ -65,7 +65,9 @@ volumes:
   db:
     external:
       name: ${DB_VOLUME_HOST}
-
+  shared:
+    external:
+      name: jupyterhub-shared
 networks:
   default:
     external:

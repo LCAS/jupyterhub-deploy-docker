@@ -11,6 +11,7 @@ network:
 volumes:
 	@docker volume inspect $(DATA_VOLUME_HOST) >/dev/null 2>&1 || docker volume create --name $(DATA_VOLUME_HOST)
 	@docker volume inspect $(DB_VOLUME_HOST) >/dev/null 2>&1 || docker volume create --name $(DB_VOLUME_HOST)
+	@docker volume inspect jupyterhub-shared >/dev/null 2>&1 || docker volume create --name jupyterhub-shared
 
 self-signed-cert:
 	# make a self-signed cert
