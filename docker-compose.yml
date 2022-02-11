@@ -65,7 +65,9 @@ volumes:
   db:
     external:
       name: ${DB_VOLUME_HOST}
-
+  shared:
+    external:
+      name: k8s-jupyterhub-shared
 networks:
   default:
     external:
