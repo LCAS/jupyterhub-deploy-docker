@@ -35,7 +35,7 @@ notebook_dir = os.environ.get('DOCKER_NOTEBOOK_DIR') or '/home/jovyan/work'
 c.DockerSpawner.notebook_dir = notebook_dir
 # Mount the real user's Docker volume on the host to the notebook user's
 # notebook directory in the container
-c.DockerSpawner.volumes = { 'k8s-jupyterhub-user-{username}': notebook_dir, 'k8s-jupyterhub-shared': /shared }
+c.DockerSpawner.volumes = { 'k8s-jupyterhub-user-{username}': notebook_dir, 'k8s-jupyterhub-shared': '/shared' }
 # volume_driver is no longer a keyword argument to create_container()
 # c.DockerSpawner.extra_create_kwargs.update({ 'volume_driver': 'local' })
 # c.DockerSpawner.extra_create_kwargs.update({ 'runtime': 'nvidia' })
@@ -58,6 +58,10 @@ c.DockerSpawner.environment = {
 c.DockerSpawner.remove_containers = True
 # For debugging arguments passed to spawned containers
 c.DockerSpawner.debug = True
+
+c.DockerSpawner.prefix = 'k8s-jupyter'
+c.DockerSpawner.name_template = '{prefix}-{username}'
+
 
 # User containers will access hub by container name on the Docker network
 c.JupyterHub.hub_ip = 'k8s-hub'
@@ -87,7 +91,7 @@ c.JupyterHub.ssl_cert = os.environ['SSL_CERT']
 c.JupyterHub.authenticator_class = 'keycloakauthenticator.KeyCloakAuthenticator'
 c.KeyCloakAuthenticator.username_key = 'preferred_username'
 c.KeyCloakAuthenticator.logout_redirect_uri = 'https://lcas.lincoln.ac.uk'
-c.KeyCloakAuthenticator.oauth_callback_url = 'https://jupyterhub.lar.lincoln.ac.uk/hub/oauth_callback'
+c.KeyCloakAuthenticator.oauth_callback_url = 'https://studenthub.lar.lincoln.ac.uk/hub/oauth_callback'
 
 # Specify the issuer url, to get all the endpoints automatically from .well-known/openid-configuration
 c.KeyCloakAuthenticator.oidc_issuer = 'https://sso.lar.lincoln.ac.uk/auth/realms/lar'
@@ -95,7 +99,7 @@ c.KeyCloakAuthenticator.oidc_issuer = 'https://sso.lar.lincoln.ac.uk/auth/realms
 # If you need to set a different scope, like adding the offline option for longer lived refresh token
 c.KeyCloakAuthenticator.scope = ['openid']
 # Only allow users with this specific roles (none, to allow all)
-c.KeyCloakAuthenticator.allowed_roles = ['socs-role', 'liat-role']
+c.KeyCloakAuthenticator.allowed_roles = ['studenthub', 'socs-role', 'liat-role']
 # Specify the role to set a user as admin
 c.KeyCloakAuthenticator.admin_role = 'admin'
 
@@ -137,7 +141,7 @@ c.LocalAuthenticator.create_system_users = True
 data_dir = os.environ.get('DATA_VOLUME_CONTAINER', '/data')
 
 c.JupyterHub.cookie_secret_file = os.path.join(data_dir,
-    'jupyterhub_cookie_secret')
+    'k8s_jupyterhub_cookie_secret')
 
 c.JupyterHub.db_url = 'postgresql://postgres:{password}@{host}/{db}'.format(
     host=os.environ['POSTGRES_HOST'],
