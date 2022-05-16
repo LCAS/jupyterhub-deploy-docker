@@ -95,7 +95,7 @@ c.KeyCloakAuthenticator.oidc_issuer = 'https://sso.lar.lincoln.ac.uk/auth/realms
 # If you need to set a different scope, like adding the offline option for longer lived refresh token
 c.KeyCloakAuthenticator.scope = ['openid']
 # Only allow users with this specific roles (none, to allow all)
-c.KeyCloakAuthenticator.allowed_roles = ['socs-role', 'liat-role']
+c.KeyCloakAuthenticator.allowed_roles = ['socs-role', 'liat-role', 'lcas-role', 'lar-role']
 # Specify the role to set a user as admin
 c.KeyCloakAuthenticator.admin_role = 'admin'
 
