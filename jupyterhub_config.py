@@ -50,12 +50,15 @@ c.DockerSpawner.extra_host_config = {
     ],
 }
 
+c.DockerSpawner.mem_limit = '8G'
+#c.DockerSpawner.cpu_limit = 4
+
 c.DockerSpawner.environment = {
     'GRANT_SUDO': '1',
 }
 
 # Remove containers once they are stopped
-c.DockerSpawner.remove_containers = True
+c.DockerSpawner.remove = False
 # For debugging arguments passed to spawned containers
 c.DockerSpawner.debug = True
 
