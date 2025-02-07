@@ -6,9 +6,15 @@ import os
 
 c = get_config()
 
-# We rely on environment variables to configure JupyterHub so that we
-# avoid having to rebuild the JupyterHub container every time we change a
-# configuration parameter.
+
+# eanble sharing https://jupyterhub.readthedocs.io/en/latest/reference/sharing.html#sharing-reference
+c.JupyterHub.load_roles = [
+    {
+        "name": "user",
+        "scopes": ["self", "shares!user", "read:users:name", "read:groups:name"],
+    },
+]
+
 
 # Spawn single-user servers as Docker containers
 c.JupyterHub.spawner_class = 'dockerspawner.DockerSpawner'

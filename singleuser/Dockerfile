@@ -44,7 +44,7 @@ RUN echo -e "jupyter\njupyter" | passwd jovyan
 #RUN apt-key adv --keyserver 'hkp://keyserver.ubuntu.com:80' --recv-key C1CF6E31E6BADE8868B172B4F42ED6FBAB17C654
 #RUN apt-get update
 
-RUN pip install jupyter-collaboration
+RUN pip install jupyter-collaboration jupyterlab-link-share
 # RUN pip install --upgrade octave_kernel bash_kernel
 
 # RUN pip install --upgrade calysto_prolog octave_kernel bash_kernel
