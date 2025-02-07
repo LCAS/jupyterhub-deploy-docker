@@ -27,6 +27,7 @@ c.DockerSpawner.container_image = os.environ['DOCKER_NOTEBOOK_IMAGE']
 # using the DOCKER_SPAWN_CMD environment variable.
 spawn_cmd = os.environ.get('DOCKER_SPAWN_CMD', "start-singleuser.sh")
 c.DockerSpawner.extra_create_kwargs.update({ 'command': spawn_cmd })
+
 # Connect containers to this Docker network
 network_name = os.environ['DOCKER_NETWORK_NAME']
 c.DockerSpawner.use_internal_ip = True
@@ -39,6 +40,7 @@ c.DockerSpawner.extra_host_config = { 'network_mode': network_name }
 # We follow the same convention.
 notebook_dir = os.environ.get('DOCKER_NOTEBOOK_DIR') or '/home/jovyan/work'
 c.DockerSpawner.notebook_dir = notebook_dir
+
 # Mount the real user's Docker volume on the host to the notebook user's
 # notebook directory in the container
 c.DockerSpawner.volumes = { 'jupyterhub-user-{username}': notebook_dir, 'jupyterhub-shared': '/shared' }
@@ -57,7 +59,7 @@ c.DockerSpawner.extra_host_config = {
 }
 
 c.DockerSpawner.mem_limit = '8G'
-#c.DockerSpawner.cpu_limit = 4
+c.DockerSpawner.cpu_limit = 2
 
 c.DockerSpawner.environment = {
     'GRANT_SUDO': '1',
@@ -72,14 +74,13 @@ c.DockerSpawner.debug = True
 c.JupyterHub.hub_ip = '0.0.0.0'
 c.JupyterHub.hub_port = 8080
 
-
-
 c.JupyterHub.authenticator_class = "generic-oauth"
 
 # Fill these in with your values
 c.GenericOAuthenticator.oauth_callback_url = "https://jupyter.zrok.lcas.group/hub/oauth_callback"
-c.GenericOAuthenticator.client_id = "jupyter"
-c.GenericOAuthenticator.client_secret = "GjCTX3vAk0QXJvN5uHrInk4YnkOc8tby"
+c.GenericOAuthenticator.client_id = os.getenv("OAUTH_CLIENT_ID")
+c.GenericOAuthenticator.client_secret = os.getenv("OAUTH_CLIENT_SECRET")
+
 
 c.GenericOAuthenticator.login_service = "UoL" # Text of login button
 c.GenericOAuthenticator.authorize_url = "https://lcas.lincoln.ac.uk/auth/realms/lcas/protocol/openid-connect/auth"
@@ -91,83 +92,6 @@ c.GenericOAuthenticator.allow_all = False
 c.GenericOAuthenticator.allow_existing_users = True
 c.GenericOAuthenticator.admin_users = {"mhanheide"}
 
-# # TLS config
-# c.JupyterHub.port = 443
-# c.JupyterHub.ssl_key = os.environ['SSL_KEY']
-# c.JupyterHub.ssl_cert = os.environ['SSL_CERT']
-
-
-# from oauthenticator.generic import LocalGenericOAuthenticator
-# c.JupyterHub.authenticator_class = LocalGenericOAuthenticator
-# c.OAuthenticator.client_id = os.environ['OPENIDC_CLIENT_ID']
-# c.OAuthenticator.client_secret = os.environ['OPENIDC_CLIENT_SECRET']
-# c.LocalGenericOAuthenticator.token_url = os.environ['OAUTH2_TOKEN_URL']
-# c.LocalGenericOAuthenticator.userdata_url = os.environ['OAUTH2_USERDATA_URL']
-# c.LocalGenericOAuthenticator.userdata_method = 'GET'
-# c.LocalGenericOAuthenticator.userdata_params = {"state": "state"}
-# c.LocalGenericOAuthenticator.username_key = "preferred_username"
-# c.LocalAuthenticator.create_system_users = True
-
-
-#################
-
-# Enable the authenticator
-#from kcauthenticator import LocalKeycloakAuthenticator
-# c.JupyterHub.authenticator_class = 'keycloakauthenticator.KeyCloakAuthenticator'
-# c.KeyCloakAuthenticator.enable_auth_state = True
-# c.KeyCloakAuthenticator.username_claim = 'preferred_username'
-# c.KeyCloakAuthenticator.logout_redirect_url = 'https://lcas.lincoln.ac.uk'
-# c.KeyCloakAuthenticator.oauth_callback_url = 'https://jupyter.zrok.lcas.group/hub/oauth_callback'
-# c.KeyCloakAuthenticator.client_id = 'jupyter'
-# c.KeyCloakAuthenticator.client_secret = 'GjCTX3vAk0QXJvN5uHrInk4YnkOc8tby'
-
-
-# # Specify the issuer url, to get all the endpoints automatically from .well-known/openid-configuration
-# c.KeyCloakAuthenticator.oidc_issuer = 'https://lcas.lincoln.ac.uk/auth/realms/lcas'
-
-# # If you need to set a different scope, like adding the offline option for longer lived refresh token
-# c.KeyCloakAuthenticator.scope = ['openid']
-# # Only allow users with this specific roles (none, to allow all)
-# c.KeyCloakAuthenticator.allowed_roles = ['jupyter-admin', 'jupyter-user']
-# # Specify the role to set a user as admin
-# c.KeyCloakAuthenticator.admin_role = 'jupyter-admin'
-
-# # If you have the roles in a non default place inside the user token, you can retrieve them
-# # This must return a set
-# def claim_roles_key(env, token):
-#     print(token)
-#     return set(token.get('roles', []))
-# c.KeyCloakAuthenticator.claim_roles_key = claim_roles_key
-
-# # Request access tokens for other services by passing their id's (this uses the token exchange mechanism)
-# c.KeyCloakAuthenticator.exchange_tokens = []
-
-# # If your authenticator needs extra configurations, set them in the pre-spawn hook
-# # def pre_spawn_hook(authenticator, spawner, auth_state):
-# #     spawner.environment['ACCESS_TOKEN'] = auth_state['exchanged_tokens']['eos-service']
-# #     spawner.environment['OAUTH_INSPECTION_ENDPOINT'] = authenticator.userdata_url.replace('https://', '')
-# #     spawner.user_roles = authenticator.get_roles_for_token(auth_state['access_token'])
-# #     spawner.user_uid = auth_state['oauth_user']['cern_uid']
-# # c.KeyCloakAuthenticator.pre_spawn_hook = pre_spawn_hook
-
-# #Configure token signature verification
-# c.KeyCloakAuthenticator.check_signature=True
-# #c.KeyCloakAuthenticator.verify_iss=False
-# c.KeyCloakAuthenticator.jwt_signing_algorithms = ["HS512", "RS256", "RSA-OAEP"]
-
-
-# c.LocalAuthenticator.create_system_users = True
-
-
-#####################
-
-
-
-
-# Authenticate users with GitHub OAuth
-#c.JupyterHub.authenticator_class = 'oauthenticator.GitHubOAuthenticator'
-#c.GitHubOAuthenticator.oauth_callback_url = os.environ['OAUTH_CALLBACK_URL']
-
 # Persist hub data on volume mounted inside container
 data_dir = os.environ.get('DATA_VOLUME_CONTAINER', '/data')
 
@@ -177,19 +101,4 @@ c.JupyterHub.cookie_secret_file = os.path.join(data_dir,
 c.JupyterHub.cookie_secret_file = "/data/jupyterhub_cookie_secret"
 c.JupyterHub.db_url = "sqlite:////data/jupyterhub.sqlite"
 
-# Whitlelist users and admins
-#c.Authenticator.whitelist = whitelist = set()
-#c.Authenticator.admin_users = admin = set()
 c.JupyterHub.admin_access = True
-# pwd = os.path.dirname(__file__)
-# with open(os.path.join(pwd, 'userlist')) as f:
-#     for line in f:
-#         if not line:
-#             continue
-#         parts = line.split()
-#         # in case of newline at the end of userlist file
-#         if len(parts) >= 1:
-#             name = parts[0]
-#             whitelist.add(name)
-#             if len(parts) > 1 and parts[1] == 'admin':
-#                 admin.add(name)
