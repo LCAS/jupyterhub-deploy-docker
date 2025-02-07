@@ -58,18 +58,37 @@ c.DockerSpawner.environment = {
 }
 
 # Remove containers once they are stopped
-c.DockerSpawner.remove = False
+c.DockerSpawner.remove = True
 # For debugging arguments passed to spawned containers
 c.DockerSpawner.debug = True
 
 # User containers will access hub by container name on the Docker network
-c.JupyterHub.hub_ip = 'hub'
+c.JupyterHub.hub_ip = '0.0.0.0'
 c.JupyterHub.hub_port = 8080
 
-# TLS config
-c.JupyterHub.port = 443
-c.JupyterHub.ssl_key = os.environ['SSL_KEY']
-c.JupyterHub.ssl_cert = os.environ['SSL_CERT']
+
+
+c.JupyterHub.authenticator_class = "generic-oauth"
+
+# Fill these in with your values
+c.GenericOAuthenticator.oauth_callback_url = "https://jupyter.zrok.lcas.group/hub/oauth_callback"
+c.GenericOAuthenticator.client_id = "jupyter"
+c.GenericOAuthenticator.client_secret = "GjCTX3vAk0QXJvN5uHrInk4YnkOc8tby"
+
+c.GenericOAuthenticator.login_service = "UoL" # Text of login button
+c.GenericOAuthenticator.authorize_url = "https://lcas.lincoln.ac.uk/auth/realms/lcas/protocol/openid-connect/auth"
+c.GenericOAuthenticator.token_url = "https://lcas.lincoln.ac.uk/auth/realms/lcas/protocol/openid-connect/token"
+c.GenericOAuthenticator.scope = ["openid"]
+c.GenericOAuthenticator.userdata_url = "https://lcas.lincoln.ac.uk/auth/realms/lcas/protocol/openid-connect/userinfo"
+c.GenericOAuthenticator.username_claim = "preferred_username"
+c.GenericOAuthenticator.allow_all = False
+c.GenericOAuthenticator.allow_existing_users = True
+c.GenericOAuthenticator.admin_users = {"mhanheide"}
+
+# # TLS config
+# c.JupyterHub.port = 443
+# c.JupyterHub.ssl_key = os.environ['SSL_KEY']
+# c.JupyterHub.ssl_cert = os.environ['SSL_CERT']
 
 
 # from oauthenticator.generic import LocalGenericOAuthenticator
@@ -87,44 +106,51 @@ c.JupyterHub.ssl_cert = os.environ['SSL_CERT']
 #################
 
 # Enable the authenticator
-c.JupyterHub.authenticator_class = 'keycloakauthenticator.KeyCloakAuthenticator'
-c.KeyCloakAuthenticator.username_key = 'preferred_username'
-c.KeyCloakAuthenticator.logout_redirect_uri = 'https://lcas.lincoln.ac.uk'
-c.KeyCloakAuthenticator.oauth_callback_url = 'https://jupyterhub.lar.lincoln.ac.uk/hub/oauth_callback'
-
-# Specify the issuer url, to get all the endpoints automatically from .well-known/openid-configuration
-c.KeyCloakAuthenticator.oidc_issuer = 'https://sso.lar.lincoln.ac.uk/auth/realms/lar'
-
-# If you need to set a different scope, like adding the offline option for longer lived refresh token
-c.KeyCloakAuthenticator.scope = ['openid']
-# Only allow users with this specific roles (none, to allow all)
-c.KeyCloakAuthenticator.allowed_roles = ['socs-role', 'liat-role', 'lcas-role', 'lar-role']
-# Specify the role to set a user as admin
-c.KeyCloakAuthenticator.admin_role = 'admin'
-
-# If you have the roles in a non default place inside the user token, you can retrieve them
-# This must return a set
-def claim_roles_key(env, token):
-    return set(token.get('roles', []))
-c.KeyCloakAuthenticator.claim_roles_key = claim_roles_key
-
-# Request access tokens for other services by passing their id's (this uses the token exchange mechanism)
-#c.KeyCloakAuthenticator.exchange_tokens = ['eos-service', 'cernbox-service']
-
-# If your authenticator needs extra configurations, set them in the pre-spawn hook
-# def pre_spawn_hook(authenticator, spawner, auth_state):
-#     spawner.environment['ACCESS_TOKEN'] = auth_state['exchanged_tokens']['eos-service']
-#     spawner.environment['OAUTH_INSPECTION_ENDPOINT'] = authenticator.userdata_url.replace('https://', '')
-#     spawner.user_roles = authenticator.get_roles_for_token(auth_state['access_token'])
-#     spawner.user_uid = auth_state['oauth_user']['cern_uid']
-# c.KeyCloakAuthenticator.pre_spawn_hook = pre_spawn_hook
-
-#Configure token signature verification
-c.KeyCloakAuthenticator.check_signature=True
-c.KeyCloakAuthenticator.jwt_signing_algorithms = ["HS256", "RS256"]
+#from kcauthenticator import LocalKeycloakAuthenticator
+# c.JupyterHub.authenticator_class = 'keycloakauthenticator.KeyCloakAuthenticator'
+# c.KeyCloakAuthenticator.enable_auth_state = True
+# c.KeyCloakAuthenticator.username_claim = 'preferred_username'
+# c.KeyCloakAuthenticator.logout_redirect_url = 'https://lcas.lincoln.ac.uk'
+# c.KeyCloakAuthenticator.oauth_callback_url = 'https://jupyter.zrok.lcas.group/hub/oauth_callback'
+# c.KeyCloakAuthenticator.client_id = 'jupyter'
+# c.KeyCloakAuthenticator.client_secret = 'GjCTX3vAk0QXJvN5uHrInk4YnkOc8tby'
 
 
-c.LocalAuthenticator.create_system_users = True
+# # Specify the issuer url, to get all the endpoints automatically from .well-known/openid-configuration
+# c.KeyCloakAuthenticator.oidc_issuer = 'https://lcas.lincoln.ac.uk/auth/realms/lcas'
+
+# # If you need to set a different scope, like adding the offline option for longer lived refresh token
+# c.KeyCloakAuthenticator.scope = ['openid']
+# # Only allow users with this specific roles (none, to allow all)
+# c.KeyCloakAuthenticator.allowed_roles = ['jupyter-admin', 'jupyter-user']
+# # Specify the role to set a user as admin
+# c.KeyCloakAuthenticator.admin_role = 'jupyter-admin'
+
+# # If you have the roles in a non default place inside the user token, you can retrieve them
+# # This must return a set
+# def claim_roles_key(env, token):
+#     print(token)
+#     return set(token.get('roles', []))
+# c.KeyCloakAuthenticator.claim_roles_key = claim_roles_key
+
+# # Request access tokens for other services by passing their id's (this uses the token exchange mechanism)
+# c.KeyCloakAuthenticator.exchange_tokens = []
+
+# # If your authenticator needs extra configurations, set them in the pre-spawn hook
+# # def pre_spawn_hook(authenticator, spawner, auth_state):
+# #     spawner.environment['ACCESS_TOKEN'] = auth_state['exchanged_tokens']['eos-service']
+# #     spawner.environment['OAUTH_INSPECTION_ENDPOINT'] = authenticator.userdata_url.replace('https://', '')
+# #     spawner.user_roles = authenticator.get_roles_for_token(auth_state['access_token'])
+# #     spawner.user_uid = auth_state['oauth_user']['cern_uid']
+# # c.KeyCloakAuthenticator.pre_spawn_hook = pre_spawn_hook
+
+# #Configure token signature verification
+# c.KeyCloakAuthenticator.check_signature=True
+# #c.KeyCloakAuthenticator.verify_iss=False
+# c.KeyCloakAuthenticator.jwt_signing_algorithms = ["HS512", "RS256", "RSA-OAEP"]
+
+
+# c.LocalAuthenticator.create_system_users = True
 
 
 #####################
@@ -142,11 +168,8 @@ data_dir = os.environ.get('DATA_VOLUME_CONTAINER', '/data')
 c.JupyterHub.cookie_secret_file = os.path.join(data_dir,
     'jupyterhub_cookie_secret')
 
-c.JupyterHub.db_url = 'postgresql://postgres:{password}@{host}/{db}'.format(
-    host=os.environ['POSTGRES_HOST'],
-    password=os.environ['POSTGRES_PASSWORD'],
-    db=os.environ['POSTGRES_DB'],
-)
+c.JupyterHub.cookie_secret_file = "/data/jupyterhub_cookie_secret"
+c.JupyterHub.db_url = "sqlite:////data/jupyterhub.sqlite"
 
 # Whitlelist users and admins
 #c.Authenticator.whitelist = whitelist = set()

@@ -1,19 +1,15 @@
 # Copyright (c) Jupyter Development Team.
 # Distributed under the terms of the Modified BSD License.
 ARG JUPYTERHUB_VERSION
-FROM jupyterhub/jupyterhub-onbuild:$JUPYTERHUB_VERSION
+FROM quay.io/jupyterhub/jupyterhub:$JUPYTERHUB_VERSION
 
-RUN apt update && apt  upgrade -y && apt install -y python3-dev libpq-dev gcc
+# Install dockerspawner, nativeauthenticator
+# hadolint ignore=DL3013
+RUN python3 -m pip install --no-cache-dir \
+    dockerspawner \
+    jupyterhub-nativeauthenticator \
+    oauthenticator
+  
+    
 
-# Install dockerspawner, oauth, postgres
-RUN pip3 install  psycopg2 oauthenticator dockerspawner keycloakauthenticator
-
-# Copy TLS certificate and key
-ENV SSL_CERT /srv/jupyterhub/secrets/jupyterhub.crt
-ENV SSL_KEY /srv/jupyterhub/secrets/jupyterhub.key
-COPY ./secrets/*.crt $SSL_CERT
-COPY ./secrets/*.key $SSL_KEY
-RUN chmod 700 /srv/jupyterhub/secrets && \
-    chmod 600 /srv/jupyterhub/secrets/*
-
-COPY ./userlist /srv/jupyterhub/userlist
+CMD ["jupyterhub", "-f", "/srv/jupyterhub/jupyterhub_config.py"]
